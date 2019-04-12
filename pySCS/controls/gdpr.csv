@@ -1,0 +1,2 @@
+id;description;source;target;condition;comments
+GD01;GDPR - Dataflow not encrypted;Element;Dataflow;target.isEncrypted is False;dataflows should be encrypted
