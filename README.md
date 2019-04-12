@@ -14,16 +14,21 @@ Based on your definition, pySCS can generate a Data Flow Diagram (DFD), a Sequen
 ## Usage
 
 ```text
-pySCS.py folder_of_model [-h] [--debug] [--dfd] [--report REPORT] [--exclude EXCLUDE] [--seq] [--list] [--describe DESCRIBE]
+pySCS.py folder [-h] [--file FILENAME] [--debug] [--dfd] [--report REPORT] [--exclude EXCLUDE] [--seq] [--list] [--describe DESCRIBE] 
 
+required arguments:
+  folder               location of model to process
+  
 optional arguments:
   -h, --help           show this help message and exit
+  --file               filename of model to use (defaut is model.py)
   --debug              print debug messages
-  --dfd                output DFD (default)
+  --dfd                output DFD
   --report REPORT      output report using the named template file (sample template file is under docs/template_test.md)
   --exclude EXCLUDE    specify threat IDs to be ignored
   --seq                output sequence diagram
-  --list               list known threats
+  --list               list used controls in model
+  --listfull           same as --list but with full details
   --describe DESCRIBE  describe the contents of a given class
 
 ```
