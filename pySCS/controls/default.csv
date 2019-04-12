@@ -26,7 +26,7 @@ DE01;Data Flow Sniffing;Process, Element, Datastore;Dataflow;target.protocol == 
 AC06;Weak Access Control for a Resource;Process, Datastore, Element;Process, Datastore;target.hasAccessControl is False;
 DS01;Weak Credential Storage;Process, Element;Datastore;target.storesPII is True or target.storesSensitiveData is True and (target.isEncrypted is False or target.providesConfidentiality is False or target.providesIntegrity is False;
 DE02;Weak Credential Transit;Process, Datastore, Element;Dataflow;target.authenticatedWith is False and target.protocol == 'HTTP';
-AA05;Weak Authentication Scheme;Process, Element;Process, Datastore, Server;target.authenticationScheme in ('Basic', 'BASIC';
+AA05;Weak Authentication Scheme;Process, Element;Process, Datastore, Server;target.authenticationScheme in ('Basic', 'BASIC');
 LB01;Lambda does not authenticate source of request;Process, Element;Lambda;target.authenticatesSource is False;
 LB02;Lambda has no access control;Process, Element;Lambda;target.hasAccessControl is False;
 LB03;Lambda does not handle resource consumption;Process, Element;Lambda;target.handlesResourceConsumption is False;
