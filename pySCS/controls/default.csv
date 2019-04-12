@@ -1,4 +1,4 @@
-ID;Description;Source;Target;Condition;Comments
+ID;Description;Source;Target;Condition;Mitigation
 AA01;Dataflow not authenticated;;Dataflow;target.authenticatedWith is False;
 HA01;Server not hardened;;Server;target.isHardened is False;
 AU01;Logs created: verify if sensitive data is stored;;Datastore;target.storesLogData is True;

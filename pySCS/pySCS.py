@@ -35,7 +35,7 @@ def addThreatList(csv_file):
     # fill NaN for source and target with default value 'Element'
     df[['source','target']] = df[['source','target']].fillna('Element')
     # remove NaN from empty comments
-    df['comments'] = df['comments'].fillna('')
+    df['mitigation'] = df['mitigation'].fillna('not provided')
     # convert source and target to classses
     # df['source'] = df['source'].apply(lambda x: str_to_class(x))
     # df['target'] = df['target'].apply(lambda x: str_to_class(x))
@@ -53,6 +53,5 @@ def addThreatList(csv_file):
 exec(open("models/stub/model.py").read())
 
 # STUB - show threat dictionary
-import pprint
 for key, value in Threats.items() :
-    print (value)
+	print("{i}:  {d} - from  {s} to {t} when {c}. Mitigation: {m}".format(i=key, d=Threats[key]["description"], s=Threats[key]["source"], t=Threats[key]["target"], c=Threats[key]["condition"], m=Threats[key]["mitigation"]))

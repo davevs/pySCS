@@ -1,4 +1,4 @@
-ID;Description;Source;Target;Condition;Comments
+ID;Description;Source;Target;Condition;Mitigation
 TE06;Target and condition;;Server;target.isHardened is False;
 TE07;Source and condition;Process;;target.codeType == 'unmanaged';
 TE08;Source, target, condition;Datastore;Element;target.dataType == 'XML';
