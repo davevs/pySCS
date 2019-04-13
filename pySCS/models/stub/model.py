@@ -1,8 +1,8 @@
 # Control frameworks to use
-Threats = {}
+Controls = {}
 
-# add threatlists
-# addThreatList('test_sample.csv')
-# addThreatList('test_sample2.csv')
-addThreatList('default.csv')
-
+# add controllists
+# addControlList('test_sample.csv')
+# addControlList('test_sample2.csv')
+addControlList('default.csv')
+# addControlList('gdpr.csv')

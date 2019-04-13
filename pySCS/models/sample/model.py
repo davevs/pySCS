@@ -1,10 +1,12 @@
+#from modules import elements
 # Control frameworks to use
-Threats = {}
+Controls = {}
 
-# add threatlists
-# addThreatList('test_sample.csv')
-# addThreatList('test_sample2.csv')
-addThreatList('default.csv')
+# add controllists
+# addControlList('test_sample.csv')
+# addControlList('test_sample2.csv')
+addControlList('default.csv')
+# addControlList('gdpr.csv')
 
 # Model description
 scs = SCS("my test model")
@@ -57,4 +59,4 @@ db_to_web.protocol = "MySQL"
 db_to_web.data = 'Results of insert op'
 db_to_web.order = 4
 
-tm.process()
+scs.process()

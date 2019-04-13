@@ -21,7 +21,7 @@ Name|From|To |Data|Protocol|Port
 {dataflows:repeat:{{item.name}}|{{item.source.name}}|{{item.sink.name}}|{{item.data}}|{{item.protocol}}|{{item.dstPort}}
 }
 
-## Threatlist
+## Control list
 
 {findings:repeat:* {{item.description}} on element "{{item.target}}"
 }

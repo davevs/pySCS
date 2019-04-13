@@ -135,7 +135,7 @@ pySCS.py folder_of_model --dfd | dot -Tpng -o sample.png
 
 ```
 
-Generates this diagram:
+and generates this diagram:
 
 ![dfd.png](.gitbook/assets/dfd.png)
 

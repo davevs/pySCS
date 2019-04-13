@@ -1,0 +1,1 @@
+python pySCS.py %1 --seq --file %2 | java -Djava.awt.headless=true -jar external\plantuml.jar -tpng -pipe > %1\seq.png
