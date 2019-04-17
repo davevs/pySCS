@@ -1,3 +1,5 @@
+from ...pySCS import *
+
 #from modules import elements
 # Control frameworks to use
 Controls = {}
@@ -21,6 +23,10 @@ user.inBoundary = User_Web
 web = Server("Web Server")
 web.OS = "CloudOS"
 web.isHardened = True
+# web.encodesOutput = True
+web.e
+
+
 
 db = Datastore("SQL Database (*)")
 db.OS = "CentOS"

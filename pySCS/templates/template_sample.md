@@ -25,3 +25,7 @@ Name|From|To |Data|Protocol|Port
 
 {findings:repeat:* {{item.description}} on element "{{item.target}}"
 }
+
+## Checked controls
+
+{controls:repeat:* }

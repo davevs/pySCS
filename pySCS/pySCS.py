@@ -9,6 +9,7 @@ from hashlib import sha224
 from re import sub
 import string
 import pandas
+import pprint
 
 # Main loader of the framework
 # This contains descriptions of the elements and will parse the model.py on the provided folder location
@@ -176,6 +177,7 @@ def addControlList(csv_file):
     temp_dict = df.to_dict('id')
     # Update global controllist
     Controls.update(temp_dict)
+    _debug(args, Controls)
 
 # Element definitions
 
@@ -197,6 +199,7 @@ class SCS():
 
     def resolve(self):
         for e in (SCS.BagOfElements):
+            _debug(args, "Scope for {}: {}".format(e, e.inScope))
             if e.inScope is True:
                 for t in SCS.BagOfControls:
                     if t.apply(e) is True:
@@ -277,12 +280,20 @@ class Control():
 #        print(SCS.BagOfControls)
 
     def apply(self, target):
+        _debug(args, "Type detected: {}".format(type(self.target)))
         if type(self.target) is tuple:
+            # This branch is never used
             if type(target) not in self.target:
                 return None
         else:
-            if type(target) is not self.target:
+            # changed this to tuple evaluation to get it to work. No clue why ....
+            # if type(target) is not self.target:
+            if type(target) not in self.target:
                 return None
+            _debug(args, "Target type: {}".format(type(target)))
+            _debug(args, "Self type: {}".format(self.target))
+            _debug(args, "Evaluation: {}".format(type(target) not in self.target))
+            _debug(args, "Condition eval {}".format(eval(self.condition)))
         return eval(self.condition)
 
 class Finding():
@@ -300,6 +311,8 @@ class Element():
     def __init__(self, name):
         self.name = name
         SCS.BagOfElements.append(self)
+        _debug(args, "{} elements loaded\n".format(len(SCS.BagOfElements)))
+
 
     def check(self):
         return True
@@ -318,6 +331,8 @@ class Boundary(Element):
         super().__init__(name)
         if name not in SCS.BagOfBoundaries:
             SCS.BagOfBoundaries.append(self)
+            _debug(args, "{} boundaries loaded\n".format(len(SCS.BagOfBoundaries)))
+
 
     def dfd(self):
         print("subgraph cluster_{0} {{\n\tgraph [\n\t\tfontsize = 10;\n\t\tfontcolor = firebrick2;\n\t\tstyle = dashed;\n\t\tcolor = firebrick2;\n\t\tlabel = <<i>{1}</i>>;\n\t]\n".format(_uniq_name(self.name), self.name))
@@ -489,7 +504,6 @@ class SetOfProcesses(Process):
         print("]")
 
 # Program start
-
 # First parse arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('folder', help='required; folder containing the model.py to process')
@@ -519,7 +533,6 @@ if args.describe is not None:
     print(args.describe)
     [print("\t{}".format(i)) for i in dir(c) if not callable(i) and match("__", i) is None]
     exit(0)
-
 # check provided folder location
 model_location = args.folder
 if os.path.exists(model_location) == False:
@@ -554,10 +567,26 @@ if args.listfull is True:
 	for key, value in Controls.items() :
 		print("{i} - {d} \n  from\t{s} \n  to\t{t} \n  when\t{c}\n  Mitigation: {m}".format(i=key, d=Controls[key]["description"], s=Controls[key]["source"], t=Controls[key]["target"], c=Controls[key]["condition"], m=Controls[key]["mitigation"]))
 
+#DEBUG SECTION
+_debug(args, "BagOfControls:")
+_debug(args, SCS.BagOfControls)
+_debug(args, "\n")
 
+_debug(args, "BagOfElements:")
+_debug(args, SCS.BagOfElements)
+_debug(args, "\n")
 
+_debug(args, "BagOfBoundaries:")
+_debug(args, SCS.BagOfBoundaries)
+_debug(args, "\n")
 
+_debug(args, "BagOfFlows:")
+_debug(args, SCS.BagOfFlows)
+_debug(args, "\n")
 
+_debug(args, "BagOfFindings:")
+_debug(args, SCS.BagOfFindings)
+_debug(args, "\n")
 # FIXME BEGIN
 
 # if args.exclude is not None:
