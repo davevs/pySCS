@@ -166,7 +166,7 @@ def addControlList(csv_file):
     # convert all headers to lowercase (just to be sure)
     df.columns = df.columns.str.lower()
     # fill NaN for source and target with default value 'Element'
-    df[['source','target']] = df[['source','target']].fillna('Element')
+    df[['source','target']] = df[['source','target']].fillna('Any')
     # remove NaN from empty comments
     df['mitigation'] = df['mitigation'].fillna('not provided')
     # convert source and target to classses
@@ -501,6 +501,10 @@ class SetOfProcesses(Process):
         print("{0} [\n\tshape = doublecircle;\n\tcolor = {1};\n".format(_uniq_name(self.name), color))
         print('\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><font color="{1}"><b>{0}</b></font></td></tr></table>>;'.format(self.name, color))
         print("]")
+
+class Any(Element):
+    def __init__(self, name):
+        super().__init__(name)
 
 # Program start
 # First parse arguments
