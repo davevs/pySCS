@@ -165,7 +165,7 @@ def addControlList(csv_file):
     df = pandas.read_csv(control_csv, sep = ';', index_col = 0)
     # convert all headers to lowercase (just to be sure)
     df.columns = df.columns.str.lower()
-    # fill NaN for source and target with default value 'Element'
+    # fill NaN for source and target with default value 'Any'
     df[['source','target']] = df[['source','target']].fillna('Any')
     # remove NaN from empty comments
     df['mitigation'] = df['mitigation'].fillna('not provided')
