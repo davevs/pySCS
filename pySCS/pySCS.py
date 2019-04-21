@@ -9,7 +9,6 @@ from hashlib import sha224
 from re import sub
 import string
 import pandas
-import pprint
 
 # Main loader of the framework
 # This contains descriptions of the elements and will parse the model.py on the provided folder location
@@ -123,8 +122,8 @@ def _setColor(element):
     else:
         return "grey69"
 
-def _debug(args, msg):
-    if args.debug is True:
+def _debug(_args, msg):
+    if _args.debug is True:
         stderr.write("DEBUG: {}\n".format(msg))
 
 def _uniq_name(s):
@@ -177,17 +176,17 @@ def addControlList(csv_file):
     temp_dict = df.to_dict('id')
     # Update global controllist
     Controls.update(temp_dict)
-    _debug(args, Controls)
+    _debug(_args, Controls)
 
 # Element definitions
 
 class SCS():
     ''' Describes the control model administratively, and holds all details during a run '''
-    BagOfFlows = []
-    BagOfElements = []
-    BagOfControls = []
-    BagOfFindings = []
-    BagOfBoundaries = []
+    ListOfFlows = []
+    ListOfElements = []
+    ListOfControls = []
+    ListOfFindings = []
+    ListOfBoundaries = []
     _controlsExcluded = []
     _sf = None
     description = varString("")
@@ -198,17 +197,17 @@ class SCS():
         Control.load()
 
     def resolve(self):
-        for e in (SCS.BagOfElements):
-            _debug(args, "Scope for {}: {}".format(e, e.inScope))
+        for e in (SCS.ListOfElements):
+            _debug(_args, "Scope for {}: {}".format(e, e.inScope))
             if e.inScope is True:
-                for t in SCS.BagOfControls:
+                for t in SCS.ListOfControls:
                     if t.apply(e) is True:
-                        SCS.BagOfFindings.append(Finding(e.name, t.description))
+                        SCS.ListOfFindings.append(Finding(e.name, t.description))
 
     def check(self):
         if self.description is None:
             raise ValueError("Every control model should have at least a brief description of the system being modeled.")
-        for e in (SCS.BagOfElements + SCS.BagOfFlows):
+        for e in (SCS.ListOfElements + SCS.ListOfFlows):
             e.check()
 
     def dfd(self):
@@ -216,9 +215,9 @@ class SCS():
         print("\tnode [\n\tfontname = Arial;\n\tfontsize = 14;\n\trankdir = lr;\n\t]")
         print("\tedge [\n\tshape = none;\n\tfontname = Arial;\n\tfontsize = 12;\n\t]")
         print('\tlabelloc = "t";\n\tfontsize = 20;\n\tnodesep = 1;\n')
-        for b in SCS.BagOfBoundaries:
+        for b in SCS.ListOfBoundaries:
             b.dfd()
-        for e in SCS.BagOfElements:
+        for e in SCS.ListOfElements:
             #  Boundaries draw themselves
             if type(e) != Boundary and e.inBoundary == None:
                 e.dfd()
@@ -226,7 +225,7 @@ class SCS():
 
     def seq(self):
         print("@startuml")
-        for e in SCS.BagOfElements:
+        for e in SCS.ListOfElements:
             if type(e) is Actor:
                 print("actor {0} as \"{1}\"".format(_uniq_name(e.name), e.name))
             elif type(e) is Datastore:
@@ -234,26 +233,26 @@ class SCS():
             elif type(e) is not Dataflow and type(e) is not Boundary:
                 print("entity {0} as \"{1}\"".format(_uniq_name(e.name), e.name))
 
-        ordered = sorted(SCS.BagOfFlows, key=lambda flow: flow.order)
+        ordered = sorted(SCS.ListOfFlows, key=lambda flow: flow.order)
         for e in ordered:
             print("{0} -> {1}: {2}".format(_uniq_name(e.source.name), _uniq_name(e.sink.name), e.name))
             if e.note != "":
                 print("note left\n{}\nend note".format(e.note))
         print("@enduml")
 
-    def report(self, *args, **kwargs):
+    def report(self, *_args, **kwargs):
         with open(self._template) as file:
             template = file.read()
 
-        print(self._sf.format(template, scs=self, dataflows=self.BagOfFlows, controls=self.BagOfControls, findings=self.BagOfFindings, elements=self.BagOfElements, boundaries=self.BagOfBoundaries))
+        print(self._sf.format(template, scs=self, dataflows=self.ListOfFlows, controls=self.ListOfControls, findings=self.ListOfFindings, elements=self.ListOfElements, boundaries=self.ListOfBoundaries))
 
     def process(self):
         self.check()
-        if args.seq is True:
+        if _args.seq is True:
             self.seq()
-        if args.dfd is True:
+        if _args.dfd is True:
             self.dfd()
-        if args.report is not None:
+        if _args.report is not None:
             self.resolve()
             self.report()
 
@@ -275,12 +274,12 @@ class Control():
         for t in Controls.keys():
             if t not in SCS._controlsExcluded:
                 tt = Control(t, Controls[t]["description"], Controls[t]["condition"], Controls[t]["target"])
-                SCS.BagOfControls.append(tt)
-        _debug(args, "{} control(s) loaded\n".format(len(SCS.BagOfControls)))
-#        print(SCS.BagOfControls)
+                SCS.ListOfControls.append(tt)
+        _debug(_args, "{} control(s) loaded\n".format(len(SCS.ListOfControls)))
+#        print(SCS.ListOfControls)
 
     def apply(self, target):
-        _debug(args, "Type detected: {}".format(type(self.target)))
+        _debug(_args, "Type detected: {}".format(type(self.target)))
         if type(self.target) is tuple:
             # This branch is never used
             if type(target) not in self.target:
@@ -290,10 +289,10 @@ class Control():
             # if type(target) is not self.target:
             if type(target) not in self.target:
                 return None
-            _debug(args, "Target type: {}".format(type(target)))
-            _debug(args, "Self type: {}".format(self.target))
-            _debug(args, "Evaluation: {}".format(type(target) not in self.target))
-            _debug(args, "Condition eval {}".format(eval(self.condition)))
+            _debug(_args, "Target type: {}".format(type(target)))
+            _debug(_args, "Self type: {}".format(self.target))
+            _debug(_args, "Evaluation: {}".format(type(target) not in self.target))
+            _debug(_args, "Condition eval {}".format(eval(self.condition)))
         return eval(self.condition)
 
 class Finding():
@@ -310,8 +309,8 @@ class Element():
 
     def __init__(self, name):
         self.name = name
-        SCS.BagOfElements.append(self)
-        _debug(args, "{} elements loaded\n".format(len(SCS.BagOfElements)))
+        SCS.ListOfElements.append(self)
+        _debug(_args, "{} elements loaded\n".format(len(SCS.ListOfElements)))
 
 
     def check(self):
@@ -329,19 +328,19 @@ class Element():
 class Boundary(Element):
     def __init__(self, name):
         super().__init__(name)
-        if name not in SCS.BagOfBoundaries:
-            SCS.BagOfBoundaries.append(self)
-            _debug(args, "{} boundaries loaded\n".format(len(SCS.BagOfBoundaries)))
+        if name not in SCS.ListOfBoundaries:
+            SCS.ListOfBoundaries.append(self)
+            _debug(_args, "{} boundaries loaded\n".format(len(SCS.ListOfBoundaries)))
 
 
     def dfd(self):
         print("subgraph cluster_{0} {{\n\tgraph [\n\t\tfontsize = 10;\n\t\tfontcolor = firebrick2;\n\t\tstyle = dashed;\n\t\tcolor = firebrick2;\n\t\tlabel = <<i>{1}</i>>;\n\t]\n".format(_uniq_name(self.name), self.name))
-        _debug(args, "Now drawing boundary " + self.name)
-        for e in SCS.BagOfElements:
+        _debug(_args, "Now drawing boundary " + self.name)
+        for e in SCS.ListOfElements:
             if type(e) == Boundary:
                 continue  # Boundaries are not in boundaries
             if e.inBoundary == self:
-                _debug(args, "Now drawing content " + e.name)
+                _debug(_args, "Now drawing content " + e.name)
                 e.dfd()
         print("\n}\n")
 
@@ -374,7 +373,7 @@ class Dataflow(Element):
         self.sink = sink
         self.name = name
         super().__init__(name)
-        SCS.BagOfFlows.append(self)
+        SCS.ListOfFlows.append(self)
 
     def __set__(self, instance, value):
         print("Should not have gotten here.")
@@ -382,7 +381,7 @@ class Dataflow(Element):
     def check(self):
         ''' makes sure it is good to go '''
         # all minimum annotations are in place
-        # then add itself to BagOfFlows
+        # then add itself to ListOfFlows
         pass
 
     def dfd(self):
@@ -517,37 +516,37 @@ parser.add_argument('--listfull', action='store_true', help='same as --list but 
 parser.add_argument('--describe', help='describe the contents of a given class (use dummy foldername)')
 parser.add_argument('--debug', action='store_true', help='print debug messages')
 
-args = parser.parse_args()
+_args = parser.parse_args()
 
-if args.dfd is True and args.seq is True:
+if _args.dfd is True and _args.seq is True:
     stderr.write("Cannot produce DFD and sequential diagrams in the same run.\n")
     exit(0)
 
-if args.describe is not None:
+if _args.describe is not None:
     try:
-        one_word = args.describe.split()[0]
+        one_word = _args.describe.split()[0]
         c = eval(one_word)
     except Exception:
-        stderr.write("No such class to describe: {}\n".format(args.describe))
+        stderr.write("No such class to describe: {}\n".format(_args.describe))
         exit(-1)
-    print(args.describe)
+    print(_args.describe)
     [print("\t{}".format(i)) for i in dir(c) if not callable(i) and match("__", i) is None]
     exit(0)
 # check provided folder location
-model_location = args.folder
+model_location = _args.folder
 if os.path.exists(model_location) == False:
 	stderr.write("Folder not found.")
 	exit(-1)	
 
 # check if alternative filename is provided
-if args.file is not None:
-	model_name = args.file
+if _args.file is not None:
+	model_name = _args.file
 else:
 	model_name = "model.py"
 
 # load reporting template if provided
-if args.report is not None:
-	SCS._template = args.report
+if _args.report is not None:
+	SCS._template = _args.report
 
 # parse model
 model_file = os.path.join(model_location, model_name)
@@ -560,35 +559,35 @@ stderr.write("Processing: {l}\n".format(l=model_file))
 exec(open(model_file).read())
 
 # list used controls in model (either in short or full description)
-if args.list is True:
+if _args.list is True:
 	for key, value in Controls.items() :
 		print("{i} - {d}".format(i=key, d=Controls[key]["description"]))
-if args.listfull is True:
+if _args.listfull is True:
 	for key, value in Controls.items() :
 		print("{i} - {d} \n  from\t{s} \n  to\t{t} \n  when\t{c}\n  Mitigation: {m}".format(i=key, d=Controls[key]["description"], s=Controls[key]["source"], t=Controls[key]["target"], c=Controls[key]["condition"], m=Controls[key]["mitigation"]))
 
 #DEBUG SECTION
-_debug(args, "BagOfControls:")
-_debug(args, SCS.BagOfControls)
-_debug(args, "\n")
+_debug(_args, "ListOfControls:")
+_debug(_args, SCS.ListOfControls)
+_debug(_args, "\n")
 
-_debug(args, "BagOfElements:")
-_debug(args, SCS.BagOfElements)
-_debug(args, "\n")
+_debug(_args, "ListOfElements:")
+_debug(_args, SCS.ListOfElements)
+_debug(_args, "\n")
 
-_debug(args, "BagOfBoundaries:")
-_debug(args, SCS.BagOfBoundaries)
-_debug(args, "\n")
+_debug(_args, "ListOfBoundaries:")
+_debug(_args, SCS.ListOfBoundaries)
+_debug(_args, "\n")
 
-_debug(args, "BagOfFlows:")
-_debug(args, SCS.BagOfFlows)
-_debug(args, "\n")
+_debug(_args, "ListOfFlows:")
+_debug(_args, SCS.ListOfFlows)
+_debug(_args, "\n")
 
-_debug(args, "BagOfFindings:")
-_debug(args, SCS.BagOfFindings)
-_debug(args, "\n")
+_debug(_args, "ListOfFindings:")
+_debug(_args, SCS.ListOfFindings)
+_debug(_args, "\n")
 # FIXME BEGIN
 
-# if args.exclude is not None:
-#     TM._controlsExcluded = args.exclude.split(",")
+# if _args.exclude is not None:
+#     TM._controlsExcluded = _args.exclude.split(",")
 # FIXME END
