@@ -9,20 +9,7 @@ from hashlib import sha224
 from re import sub
 import string
 import pandas
-
-# Main loader of the framework
-# This contains descriptions of the elements and will parse the model.py on the provided folder location
-
-# You should at least provide the folder location of the model you want to process. The model should be named model.py.
-# The following parameters can be provided:
-# --debug		print debug messages
-# --dfd 		output DFD (default)
-# --report		output report using the named template file (sample template file is under templates/template_sample.md
-# --exclude		specify control IDs to be ignored
-# --seq 		output sequential diagram
-# --list		list known controls
-# --describe	describe the contents of a given element
-
+import pydot
 
 # Descriptors
 # The base for this (descriptors instead of properties) has been shamelessly lifted from    
@@ -155,7 +142,7 @@ def str_to_class(classname):
         sumelements.append(getattr(sys.modules[__name__], item))
     return (sumelements)
 
-def addControlList(csv_file):
+def import_control_list(csv_file):
 	# adds controls to list based on csv files in folder /controllists
 	# csv files should contain following structure
 	# ID;description;source;target;condition;comments
@@ -178,10 +165,44 @@ def addControlList(csv_file):
     Controls.update(temp_dict)
     _debug(_args, Controls)
 
+
+# DFD creation functions
+def add_element_to_dfd(element, color="black", shape="circle", fontname="Arial", fontsize="14"):
+    if type(element) == Boundary:
+        boundary_label = element.name
+        boundary_id = _uniq_name(element.name) 
+        _debug(_args, "Adding boundary {b} with id {i} to dfd".format(b=boundary_label, i=boundary_id))
+        boundary_dfd[boundary_id] = pydot.Cluster(boundary_id, label=boundary_label, style = "dashed", color = "firebrick2", rank="lr")
+        dfd_in_progress.add_subgraph(boundary_dfd[boundary_id])
+    else:
+        if element.inBoundary != None:
+            # determine boundary to add element to
+            boundary_id = _uniq_name(element.inBoundary.name) 
+            _debug(_args, "Adding element {e} to boundary {b}".format(e=element.name, b=boundary_id))
+            node_id = _uniq_name(element.name)
+            node_to_add = pydot.Node(node_id, label=element.name, shape=shape, color=color, fontname=fontname, fontsize=fontsize)
+            # boundary_to_use = boundary_dfd[boundary_id]
+            boundary_dfd[boundary_id].add_node(node_to_add)
+            _debug(_args, "Node {n} added to boundary {b}".format(n=node_to_add, b=boundary_dfd[boundary_id]))
+        else:
+            # elements without boundary are just added to the dfd
+            _debug(_args, "Adding element {e} to dfd".format(e=element.name))
+            node_id = _uniq_name(element.name)
+            node_to_add = pydot.Node(node_id, label=element.name, shape=shape, color=color, fontname=fontname, fontsize=fontsize)
+            dfd_in_progress.add_node(node_to_add)
+            _debug(_args, "Node {n} added DFD".format(n=node_to_add))
+
+def add_dataflow_to_dfd(description, source, sink):
+    source_id = _uniq_name(source)
+    sink_id = _uniq_name(sink)
+    dataflow_to_add = pydot.Edge(source_id, sink_id, label=description)
+    dfd_in_progress.add_edge(dataflow_to_add)
+
+
 # Element definitions
 
 class SCS():
-    ''' Describes the control model administratively, and holds all details during a run '''
+    # Describes the control model administratively, and holds all details during a run
     ListOfFlows = []
     ListOfElements = []
     ListOfControls = []
@@ -196,13 +217,17 @@ class SCS():
         self._sf = SuperFormatter()
         Control.load()
 
-    def resolve(self):
-        for e in (SCS.ListOfElements):
-            _debug(_args, "Scope for {}: {}".format(e, e.inScope))
-            if e.inScope is True:
-                for t in SCS.ListOfControls:
-                    if t.apply(e) is True:
-                        SCS.ListOfFindings.append(Finding(e.name, t.description))
+    def process(self):
+        self.check()
+        # don't create a dfd, seq diagram, and report if we just want to have the list of controls
+        if _args.list is False and _args.listfull is False:
+            self.dfd()
+        if _args.seq is True:
+            self.seq()
+        if _args.report is not None:
+            self.resolve()
+            self.report()
+
 
     def check(self):
         if self.description is None:
@@ -211,17 +236,8 @@ class SCS():
             e.check()
 
     def dfd(self):
-        print("digraph scs {\n\tgraph [\n\tfontname = Arial;\n\tfontsize = 14;\n\t]")
-        print("\tnode [\n\tfontname = Arial;\n\tfontsize = 14;\n\trankdir = lr;\n\t]")
-        print("\tedge [\n\tshape = none;\n\tfontname = Arial;\n\tfontsize = 12;\n\t]")
-        print('\tlabelloc = "t";\n\tfontsize = 20;\n\tnodesep = 1;\n')
-        for b in SCS.ListOfBoundaries:
-            b.dfd()
         for e in SCS.ListOfElements:
-            #  Boundaries draw themselves
-            if type(e) != Boundary and e.inBoundary == None:
-                e.dfd()
-        print("}")
+            e.dfd()
 
     def seq(self):
         print("@startuml")
@@ -246,15 +262,14 @@ class SCS():
 
         print(self._sf.format(template, scs=self, dataflows=self.ListOfFlows, controls=self.ListOfControls, findings=self.ListOfFindings, elements=self.ListOfElements, boundaries=self.ListOfBoundaries))
 
-    def process(self):
-        self.check()
-        if _args.seq is True:
-            self.seq()
-        if _args.dfd is True:
-            self.dfd()
-        if _args.report is not None:
-            self.resolve()
-            self.report()
+    def resolve(self):
+        for e in (SCS.ListOfElements):
+            _debug(_args, "Scope for {}: {}".format(e, e.inScope))
+            if e.inScope is True:
+                for t in SCS.ListOfControls:
+                    if t.apply(e) is True:
+                        SCS.ListOfFindings.append(Finding(e.name, t.description))
+
 
 class Control():
     id = varString("")
@@ -310,7 +325,7 @@ class Element():
     def __init__(self, name):
         self.name = name
         SCS.ListOfElements.append(self)
-        _debug(_args, "{} elements loaded\n".format(len(SCS.ListOfElements)))
+        _debug(_args, "Element {} of type {} loaded\n".format(self.name, type(self)))
 
 
     def check(self):
@@ -321,28 +336,19 @@ class Element():
             raise ValueError("Element {} needs a description and a name.".format(self.name))
 
     def dfd(self):
-        print("%s [\n\tshape = square;" % _uniq_name(self.name))
-        print('\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><b>{0}</b></td></tr></table>>;'.format(self.name))
-        print("]")
+        add_element_to_dfd(self)
 
 class Boundary(Element):
     def __init__(self, name):
         super().__init__(name)
         if name not in SCS.ListOfBoundaries:
             SCS.ListOfBoundaries.append(self)
-            _debug(_args, "{} boundaries loaded\n".format(len(SCS.ListOfBoundaries)))
 
 
     def dfd(self):
-        print("subgraph cluster_{0} {{\n\tgraph [\n\t\tfontsize = 10;\n\t\tfontcolor = firebrick2;\n\t\tstyle = dashed;\n\t\tcolor = firebrick2;\n\t\tlabel = <<i>{1}</i>>;\n\t]\n".format(_uniq_name(self.name), self.name))
-        _debug(_args, "Now drawing boundary " + self.name)
-        for e in SCS.ListOfElements:
-            if type(e) == Boundary:
-                continue  # Boundaries are not in boundaries
-            if e.inBoundary == self:
-                _debug(_args, "Now drawing content " + e.name)
-                e.dfd()
-        print("\n}\n")
+        _debug(_args, "Found boundary " + self.name)
+        add_element_to_dfd(self)
+
 
 class Actor(Element):
     isAdmin = varBool(False)
@@ -352,9 +358,7 @@ class Actor(Element):
         super().__init__(name)
 
     def dfd(self):
-        print("%s [\n\tshape = square;" % _uniq_name(self.name))
-        print('\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><b>{0}</b></td></tr></table>>;'.format(self.name))
-        print("]")
+        add_element_to_dfd(self, shape="square")
 
 class Dataflow(Element):
     source = varElement(None)
@@ -385,14 +389,8 @@ class Dataflow(Element):
         pass
 
     def dfd(self):
-        print("\t{0} -> {1} [".format(_uniq_name(self.source.name),
-                                      _uniq_name(self.sink.name)))
-        color = _setColor(self)
-        if self.order >= 0:
-            print('\t\tcolor = {2};\n\t\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><font color="{2}"><b>({0}) {1}</b></font></td></tr></table>>;'.format(self.order, self.name, color))
-        else:
-            print('\t\tcolor = {1};\n\t\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><font color ="{1}"><b>{0}</b></font></td></tr></table>>;'.format(self.name, color))
-        print("\t]")
+        # TODO: add order 
+        add_dataflow_to_dfd(self.name, self.source.name, self.sink.name)
 
 class System(Element):
     OS = varString("")
@@ -421,11 +419,6 @@ class System(Element):
     def __init__(self, name):
         super().__init__(name)
 
-    def dfd(self):
-        color = _setColor(self)
-        print("{0} [\n\tshape = circle\n\tcolor = {1}".format(_uniq_name(self.name), color))
-        print('\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><b>{}</b></td></tr></table>>;'.format(self.name))
-        print("]")
 
 class Server(System):
 
@@ -433,10 +426,7 @@ class Server(System):
         super().__init__(name)
 
     def dfd(self):
-        color = _setColor(self)
-        print("{0} [\n\tshape = circle\n\tcolor = {1}".format(_uniq_name(self.name), color))
-        print('\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><b>{}</b></td></tr></table>>;'.format(self.name))
-        print("]")
+        add_element_to_dfd(self, shape="square")
 
 class Lambda(System):
 
@@ -444,19 +434,15 @@ class Lambda(System):
         super().__init__(name)
 
     def dfd(self):
-        color = _setColor(self)
-        local_dir = path.dirname(__file__)
-        img_path = 'images'
-        img_file = 'lambda.png'
-        img_source = os.path.join(local_dir, img_path, img_file)
-        print('{0} [\n\tshape = none\n\tfixedsize=shape\n\timage="{2}"\n\timagescale=true\n\tcolor = {1}'.format(_uniq_name(self.name), color, img_source))
-        print('\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><b>{}</b></td></tr></table>>;'.format(self.name))
-        print("]")
+        add_element_to_dfd(self, shape="Mcircle")
 
 class ExternalEntity(System):
 
     def __init__(self, name):
         super().__init__(name)
+
+    def dfd(self):
+        add_element_to_dfd(self, shape="underline")
 
 class Datastore(System):
     onRDS = varBool(False)
@@ -472,10 +458,7 @@ class Datastore(System):
         super().__init__(name)
 
     def dfd(self):
-        color = _setColor(self)
-        print("{0} [\n\tshape = none;\n\tcolor = {1};".format(_uniq_name(self.name), color))
-        print('\tlabel = <<table sides="TB" cellborder="0" cellpadding="2"><tr><td><font color="{1}"><b>{0}</b></font></td></tr></table>>;'.format(self.name, color))
-        print("]")
+        add_element_to_dfd(self, shape="rect")
 
 class Process(System):
     codeType = varString("Unmanaged")
@@ -487,31 +470,30 @@ class Process(System):
         super().__init__(name)
 
     def dfd(self):
-        color = _setColor(self)
-        print("{0} [\n\tshape = circle;\n\tcolor = {1};\n".format(_uniq_name(self.name), color))
-        print('\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><font color="{1}"><b>{0}</b></font></td></tr></table>>;'.format(self.name, color))
-        print("]")
+        add_element_to_dfd(self, shape="circle")
 
 class SetOfProcesses(Process):
     def __init__(self, name):
         super().__init__(name)
 
     def dfd(self):
-        color = _setColor(self)
-        print("{0} [\n\tshape = doublecircle;\n\tcolor = {1};\n".format(_uniq_name(self.name), color))
-        print('\tlabel = <<table border="0" cellborder="0" cellpadding="2"><tr><td><font color="{1}"><b>{0}</b></font></td></tr></table>>;'.format(self.name, color))
-        print("]")
+        add_element_to_dfd(self, shape="doublecircle")
 
 class Any(Element):
     def __init__(self, name):
         super().__init__(name)
 
 # Program start
+
+# Initialize DFD variables
+dfd_in_progress = pydot.Dot(name='DFD', graph_type='digraph')
+boundary_dfd = {}
+
 # First parse arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('folder', help='required; folder containing the model.py to process')
 parser.add_argument('--file', help='alternative filename (default = model.py')
-parser.add_argument('--dfd', action='store_true', help='output DFD')
+# parser.add_argument('--dfd', action='store_true', help='output DFD')
 parser.add_argument('--seq', action='store_true', help='output sequential diagram')
 parser.add_argument('--report', help='output report using the specified template file')
 parser.add_argument('--list', action='store_true', help='list controls used in model')
@@ -521,10 +503,6 @@ parser.add_argument('--describe', help='describe the contents of a given class (
 parser.add_argument('--debug', action='store_true', help='print debug messages')
 
 _args = parser.parse_args()
-
-if _args.dfd is True and _args.seq is True:
-    stderr.write("Cannot produce DFD and sequential diagrams in the same run.\n")
-    exit(0)
 
 if _args.describe is not None:
     try:
@@ -555,41 +533,29 @@ if _args.report is not None:
 # parse model
 model_file = os.path.join(model_location, model_name)
 stderr.write("Processing: {l}\n".format(l=model_file))
-# try:
-# 	exec(open(model_file).read())
-# except Exception:
-# 	stderr.write("File {m} not found.\n".format(m=model_file))
-# 	exit(-1)
 exec(open(model_file).read())
 
 # list used controls in model (either in short or full description)
 if _args.list is True:
-	for key, value in Controls.items() :
-		print("{i} - {d}".format(i=key, d=Controls[key]["description"]))
+    for key, value in Controls.items() :
+        print("{i} - {d}".format(i=key, d=Controls[key]["description"]))
+    exit(0)
 if _args.listfull is True:
-	for key, value in Controls.items() :
-		print("{i} - {d} \n  from\t{s} \n  to\t{t} \n  when\t{c}\n  Mitigation: {m}".format(i=key, d=Controls[key]["description"], s=Controls[key]["source"], t=Controls[key]["target"], c=Controls[key]["condition"], m=Controls[key]["mitigation"]))
+    for key, value in Controls.items() :
+        print("{i} - {d} \n  from\t{s} \n  to\t{t} \n  when\t{c}\n  Mitigation: {m}".format(i=key, d=Controls[key]["description"], s=Controls[key]["source"], t=Controls[key]["target"], c=Controls[key]["condition"], m=Controls[key]["mitigation"]))
+    exit(0)
+
+# Write output files
+dfd_name = "dfd.png"
+dfd_file = os.path.join(model_location, dfd_name)
+dfd_in_progress.write_png(dfd_file)
 
 #DEBUG SECTION
-_debug(_args, "ListOfControls:")
-_debug(_args, SCS.ListOfControls)
-_debug(_args, "\n")
+_debug(_args, "DFD generated:\n")
+_debug(_args, "{}".format(dfd_in_progress))
 
-_debug(_args, "ListOfElements:")
-_debug(_args, SCS.ListOfElements)
-_debug(_args, "\n")
-
-_debug(_args, "ListOfBoundaries:")
-_debug(_args, SCS.ListOfBoundaries)
-_debug(_args, "\n")
-
-_debug(_args, "ListOfFlows:")
-_debug(_args, SCS.ListOfFlows)
-_debug(_args, "\n")
-
-_debug(_args, "ListOfFindings:")
-_debug(_args, SCS.ListOfFindings)
-_debug(_args, "\n")
+import webbrowser
+webbrowser.open(dfd_file)
 # FIXME BEGIN
 
 # if _args.exclude is not None:

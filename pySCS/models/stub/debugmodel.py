@@ -2,10 +2,10 @@
 Controls = {}
 
 # add controllists
-addControlList('test_sample.csv')
-addControlList('test_sample2.csv')
-# addControlList('default.csv')
-# addControlList('gdpr.csv')
+import_control_list('test_sample.csv')
+import_control_list('test_sample2.csv')
+# import_control_list('default.csv')
+# import_control_list('gdpr.csv')
 
 scs = SCS("my first model")
 scs.description = "sample to show pySCS"
