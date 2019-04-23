@@ -19,13 +19,10 @@ clean:
 scs:
 	mkdir -p scs
 
-dfd:
-	./pySCS.py --dfd | dot -Tpng -o dfd.png
-
 seq:
 	./pySCS.py --seq | java -Djava.awt.headless=true -jar ./plantuml.jar -tpng -pipe > seq.png
 
-report: scs dfd seq
+report: scs seq
 	./pySCS.py --report templates/template_sample.md > scs/report.md
 
 build: pytm/pytm.py

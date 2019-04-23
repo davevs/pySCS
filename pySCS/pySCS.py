@@ -167,12 +167,12 @@ def import_control_list(csv_file):
 
 
 # DFD creation functions
-def add_element_to_dfd(element, color="black", shape="circle", fontname="Arial", fontsize="14"):
+def add_element_to_dfd(element, color="black", shape="circle", fontname="Arial", fontsize="14", rank="same"):
     if type(element) == Boundary:
         boundary_label = element.name
         boundary_id = _uniq_name(element.name) 
         _debug(_args, "Adding boundary {b} with id {i} to dfd".format(b=boundary_label, i=boundary_id))
-        boundary_dfd[boundary_id] = pydot.Cluster(boundary_id, label=boundary_label, style = "dashed", color = "firebrick2", rank="lr")
+        boundary_dfd[boundary_id] = pydot.Cluster(boundary_id, label=boundary_label, style = "dashed", color = "firebrick2", fontsize="10", fontcolor="firebrick2", fontname="Arial italic")
         dfd_in_progress.add_subgraph(boundary_dfd[boundary_id])
     else:
         if element.inBoundary != None:
@@ -180,7 +180,7 @@ def add_element_to_dfd(element, color="black", shape="circle", fontname="Arial",
             boundary_id = _uniq_name(element.inBoundary.name) 
             _debug(_args, "Adding element {e} to boundary {b}".format(e=element.name, b=boundary_id))
             node_id = _uniq_name(element.name)
-            node_to_add = pydot.Node(node_id, label=element.name, shape=shape, color=color, fontname=fontname, fontsize=fontsize)
+            node_to_add = pydot.Node(node_id, label=element.name, shape=shape, color=color, fontname=fontname, fontsize=fontsize, rank=rank)
             # boundary_to_use = boundary_dfd[boundary_id]
             boundary_dfd[boundary_id].add_node(node_to_add)
             _debug(_args, "Node {n} added to boundary {b}".format(n=node_to_add, b=boundary_dfd[boundary_id]))
@@ -188,7 +188,7 @@ def add_element_to_dfd(element, color="black", shape="circle", fontname="Arial",
             # elements without boundary are just added to the dfd
             _debug(_args, "Adding element {e} to dfd".format(e=element.name))
             node_id = _uniq_name(element.name)
-            node_to_add = pydot.Node(node_id, label=element.name, shape=shape, color=color, fontname=fontname, fontsize=fontsize)
+            node_to_add = pydot.Node(node_id, label=element.name, shape=shape, color=color, fontname=fontname, fontsize=fontsize, rank=rank)
             dfd_in_progress.add_node(node_to_add)
             _debug(_args, "Node {n} added DFD".format(n=node_to_add))
 
@@ -458,7 +458,7 @@ class Datastore(System):
         super().__init__(name)
 
     def dfd(self):
-        add_element_to_dfd(self, shape="rect")
+        add_element_to_dfd(self, shape="none")
 
 class Process(System):
     codeType = varString("Unmanaged")

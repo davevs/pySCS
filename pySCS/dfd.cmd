@@ -1,1 +1,0 @@
-python pySCS.py %1 --dfd --file %2 | dot -Tpng -o %1\dfd.png
