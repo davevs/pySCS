@@ -7,13 +7,11 @@ Based on your definition, pySCS can generate a Data Flow Diagram (DFD), a Sequen
 * Linux/MacOS/Windows 10
 * Python 3.x
 * Graphviz package
-* Java (OpenJDK 10 or 11)
-* [plantuml.jar](http://sourceforge.net/projects/plantuml/files/plantuml.jar/download)
-
 
 Python modules
 * pandas
 * pyplot
+* seqdiag
 
 ## Usage
 

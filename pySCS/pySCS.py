@@ -10,6 +10,7 @@ from re import sub
 import string
 import pandas
 import pydot
+from seqdiag import parser as seq_parser, builder as seq_builder, drawer as seq_drawer 
 
 # Descriptors
 # The base for this (descriptors instead of properties) has been shamelessly lifted from    
@@ -231,6 +232,52 @@ def add_dataflow_to_dfd(description, source, sink):
     dataflow_to_add = pydot.Edge(source_id, sink_id, label=description)
     dfd_in_progress.add_edge(dataflow_to_add)
 
+def create_seq_diag():
+    seq_in_in_progress = []
+    seq_in_in_progress.append("seqdiag {\nactivation = none\nautonumber = true\n")
+    for e in SCS.ListOfElements:
+        if type(e) is Actor:
+            seq_in_in_progress.append("{i} [label = \"{n}\"];\n".format(i=_uniq_name(e.name), n=e.name))
+        elif type(e) is Datastore:
+            seq_in_in_progress.append("{i} [label = \"{n}\"];\n".format(i=_uniq_name(e.name), n=e.name))
+        elif type(e) is not Dataflow and type(e) is not Boundary:
+            seq_in_in_progress.append("{i} [label = \"{n}\"];\n".format(i=_uniq_name(e.name), n=e.name))
+
+    ordered = sorted(SCS.ListOfFlows, key=lambda flow: flow.order)
+    for e in ordered:
+        if e.note != "":
+            seq_in_in_progress.append("{s} -> {t} [label = \"{l}\" note = \"{n}\"]\n".format(s=_uniq_name(e.source.name), t=_uniq_name(e.sink.name), l=e.name, n=e.note))
+        else:
+            seq_in_in_progress.append("{s} -> {t} [label = \"{l}\"]\n".format(s=_uniq_name(e.source.name), t=_uniq_name(e.sink.name), l=e.name))
+    seq_in_in_progress.append("}\n")
+    seq_created = ''.join(seq_in_in_progress)
+
+    #write sequence diagram
+    seq_name = "seq.png"
+    seq_file = os.path.join(model_location, seq_name)
+    tree = seq_parser.parse_string(seq_created) 
+    diagram = seq_builder.ScreenNodeBuilder.build(tree) 
+    draw = seq_drawer.DiagramDraw('PNG', diagram, filename=seq_file) 
+    draw.draw() 
+    draw.save() 
+
+    _debug(_args, "SEQ generated:\n")
+    _debug(_args, "{}".format(seq_created))
+
+    import webbrowser
+    webbrowser.open(seq_file)
+
+def output_dfd():
+    # write DFD
+    dfd_name = "dfd.png"
+    dfd_file = os.path.join(model_location, dfd_name)
+    dfd_in_progress.write_png(dfd_file)
+
+    _debug(_args, "DFD generated:\n")
+    _debug(_args, "{}".format(dfd_in_progress))
+
+    import webbrowser
+    webbrowser.open(dfd_file)
 
 # Element definitions
 
@@ -255,7 +302,6 @@ class SCS():
         # don't create a dfd, seq diagram, and report if we just want to have the list of controls
         if _args.list is False and _args.listfull is False:
             self.dfd()
-        if _args.seq is True:
             self.seq()
         if _args.report is not None:
             self.resolve()
@@ -271,23 +317,10 @@ class SCS():
     def dfd(self):
         for e in SCS.ListOfElements:
             e.dfd()
+        output_dfd()
 
     def seq(self):
-        print("@startuml")
-        for e in SCS.ListOfElements:
-            if type(e) is Actor:
-                print("actor {0} as \"{1}\"".format(_uniq_name(e.name), e.name))
-            elif type(e) is Datastore:
-                print("database {0} as \"{1}\"".format(_uniq_name(e.name), e.name))
-            elif type(e) is not Dataflow and type(e) is not Boundary:
-                print("entity {0} as \"{1}\"".format(_uniq_name(e.name), e.name))
-
-        ordered = sorted(SCS.ListOfFlows, key=lambda flow: flow.order)
-        for e in ordered:
-            print("{0} -> {1}: {2}".format(_uniq_name(e.source.name), _uniq_name(e.sink.name), e.name))
-            if e.note != "":
-                print("note left\n{}\nend note".format(e.note))
-        print("@enduml")
+        create_seq_diag()
 
     def report(self, *_args, **kwargs):
         with open(self._template) as file:
@@ -537,8 +570,6 @@ initialize_dfd()
 parser = argparse.ArgumentParser()
 parser.add_argument('folder', help='required; folder containing the model.py to process')
 parser.add_argument('--file', help='alternative filename (default = model.py')
-# parser.add_argument('--dfd', action='store_true', help='output DFD')
-parser.add_argument('--seq', action='store_true', help='output sequential diagram')
 parser.add_argument('--report', help='output report using the specified template file')
 parser.add_argument('--list', action='store_true', help='list controls used in model')
 parser.add_argument('--listfull', action='store_true', help='same as --list but with full descriptions')
@@ -589,17 +620,6 @@ if _args.listfull is True:
         print("{i} - {d} \n  from\t{s} \n  to\t{t} \n  when\t{c}\n  Mitigation: {m}".format(i=key, d=Controls[key]["description"], s=Controls[key]["source"], t=Controls[key]["target"], c=Controls[key]["condition"], m=Controls[key]["mitigation"]))
     exit(0)
 
-# Write output files
-dfd_name = "dfd.png"
-dfd_file = os.path.join(model_location, dfd_name)
-dfd_in_progress.write_png(dfd_file)
-
-#DEBUG SECTION
-_debug(_args, "DFD generated:\n")
-_debug(_args, "{}".format(dfd_in_progress))
-
-import webbrowser
-webbrowser.open(dfd_file)
 # FIXME BEGIN
 
 # if _args.exclude is not None:
