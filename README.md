@@ -18,7 +18,7 @@ Python modules
 ## Usage
 
 ```text
-pySCS.py folder [-h] [--file FILENAME] [--debug] [--dfd] [--report REPORT] [--exclude EXCLUDE] [--seq] [--list] [--describe DESCRIBE] 
+pySCS.py folder [-h] [--file FILENAME] [--debug] [--report REPORT] [--exclude EXCLUDE] [--seq] [--list] [--describe DESCRIBE] 
 
 required arguments:
   folder               location of model to process
@@ -27,7 +27,6 @@ optional arguments:
   -h, --help           show this help message and exit
   --file               filename of model to use (defaut is model.py)
   --debug              print debug messages
-  --dfd                output DFD
   --report REPORT      output report using the named template file (sample template file is under docs/template_test.md)
   --exclude EXCLUDE    specify threat IDs to be ignored
   --seq                output sequence diagram
@@ -129,31 +128,12 @@ db_to_web.order = 4
 ```
 
 ## Output
-Diagrams are output as [Dot](https://graphviz.gitlab.io/) and [PlantUML](https://plantuml.com/).
+The tool creates a report containing a Dataflow Diagram (generated with pyplot) and a Sequence Diagram (created with ....) 
 
-When `--dfd` argument is passed to the above `pySCS.py` file it generates output to stdout, which is fed to Graphviz's dot to generate the Data Flow Diagram:
-
-```bash
-
-pySCS.py folder_of_model --dfd | dot -Tpng -o sample.png
-
-```
-
-and generates this diagram:
-
+An example Dataflow Diagram: 
 ![dfd.png](.gitbook/assets/dfd.png)
 
-
-The following command generates a Sequence diagram.
-
-```bash
-
-pySCS.py folder_of_model  --seq | java -Djava.awt.headless=true -jar plantuml.jar -tpng -pipe > seq.png
-
-```
-
-and generates this diagram:
-
+An example Sequence Diagram: 
 ![seq.png](.gitbook/assets/seq.png)
 
 The diagrams and findings can be included in the template to create a final report:
