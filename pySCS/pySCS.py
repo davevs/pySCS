@@ -484,6 +484,9 @@ class Any(Element):
         super().__init__(name)
 
 # Program start
+# Initialize global variables
+# Initialize control dictionary
+Controls = {}
 
 # Initialize DFD variables
 dfd_in_progress = pydot.Dot(name='DFD', graph_type='digraph')

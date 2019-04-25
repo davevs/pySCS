@@ -1,9 +1,5 @@
 # from ...pySCS import *
 
-#from modules import elements
-# Control frameworks to use
-Controls = {}
-
 # add controllists
 # import_control_list('test_sample.csv')
 # import_control_list('test_sample2.csv')
