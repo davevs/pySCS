@@ -12,11 +12,12 @@ Python modules
 * pandas
 * pyplot
 * seqdiag
+* pillow
 
 ## Usage
 
 ```text
-pySCS.py folder [-h] [--file FILENAME] [--debug] [--report REPORT] [--exclude EXCLUDE] [--seq] [--list] [--describe DESCRIBE] 
+pySCS.py folder [-h] [--file FILENAME] [--debug] [--report REPORT] [--exclude EXCLUDE] [--list] [--describe DESCRIBE] 
 
 required arguments:
   folder               location of model to process
@@ -27,7 +28,6 @@ optional arguments:
   --debug              print debug messages
   --report REPORT      output report using the named template file (sample template file is under docs/template_test.md)
   --exclude EXCLUDE    specify threat IDs to be ignored
-  --seq                output sequence diagram
   --list               list used controls in model
   --listfull           same as --list but with full details
   --describe DESCRIBE  describe the contents of a given class
