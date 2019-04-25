@@ -167,14 +167,47 @@ def import_control_list(csv_file):
 
 
 # DFD creation functions
-def add_element_to_dfd(element, color="black", shape="circle", fontname="Arial", fontsize="14", rank="same"):
+def initialize_dfd():
+    global dfd_in_progress
+    global boundary_dfd
+
+    # graph properties
+    dip_name = "DFD"
+    dip_graph_type = "digraph"
+    dip_labelloc = "t"
+    dip_nodesep = "1"
+    dip_font = "Arial"
+    dip_font_size = "20"
+
+    # default node properties
+    dip_font_node = "Arial"
+    dip_font_node_size = "14"
+    dip_node_rank = "LR"
+
+    # default edge properties
+    dip_font_edge = "Arial"
+    dip_font_edge_size = "12"
+    dip_edge_shape_default = "none"        
+
+    # create graph
+    dfd_in_progress = pydot.Dot(name=dip_name, graph_type=dip_graph_type, labelloc = dip_labelloc, nodesep = dip_nodesep)
+    dfd_in_progress.set_graph_defaults(fontname = dip_font, fontsize = dip_font_size)
+    dfd_in_progress.set_node_defaults(fontname = dip_font_node, fontsize = dip_font_node_size, rankdir = dip_node_rank)
+    dfd_in_progress.set_edge_defaults(shape = dip_edge_shape_default, fontname = dip_font_edge, fontsize = dip_font_edge_size)
+
+    boundary_dfd = {}
+
+
+def add_boundary_to_dfd(element):
     if type(element) == Boundary:
         boundary_label = element.name
         boundary_id = _uniq_name(element.name) 
         _debug(_args, "Adding boundary {b} with id {i} to dfd".format(b=boundary_label, i=boundary_id))
         boundary_dfd[boundary_id] = pydot.Cluster(boundary_id, label=boundary_label, style = "dashed", color = "firebrick2", fontsize="10", fontcolor="firebrick2", fontname="Arial italic")
         dfd_in_progress.add_subgraph(boundary_dfd[boundary_id])
-    else:
+
+def add_element_to_dfd(element, color="black", shape="none", fontname="Arial", fontsize="14", rank=""):
+    if type(element) != Boundary:
         if element.inBoundary != None:
             # determine boundary to add element to
             boundary_id = _uniq_name(element.inBoundary.name) 
@@ -310,11 +343,6 @@ class Control():
             _debug(_args, "Condition eval {}".format(eval(self.condition)))
         return eval(self.condition)
 
-class Finding():
-    ''' This class represents a Finding - the element in question and a description of the finding '''
-    def __init__(self, element, description):
-        self.target = element
-        self.description = description
 
 class Element():
     name = varString("")
@@ -327,7 +355,6 @@ class Element():
         SCS.ListOfElements.append(self)
         _debug(_args, "Element {} of type {} loaded\n".format(self.name, type(self)))
 
-
     def check(self):
         return True
         ''' makes sure it is good to go '''
@@ -336,17 +363,6 @@ class Element():
             raise ValueError("Element {} needs a description and a name.".format(self.name))
 
     def dfd(self):
-        add_element_to_dfd(self)
-
-class Boundary(Element):
-    def __init__(self, name):
-        super().__init__(name)
-        if name not in SCS.ListOfBoundaries:
-            SCS.ListOfBoundaries.append(self)
-
-
-    def dfd(self):
-        _debug(_args, "Found boundary " + self.name)
         add_element_to_dfd(self)
 
 
@@ -360,37 +376,12 @@ class Actor(Element):
     def dfd(self):
         add_element_to_dfd(self, shape="square")
 
-class Dataflow(Element):
-    source = varElement(None)
-    sink = varElement(None)
-    data = varString("")
-    protocol = varString("")
-    dstPort = varInt(0)
-    authenticatedWith = varBool(False)
-    order = varInt(-1)
-    implementsCommunicationProtocol = varBool(False)
-    isEncrypted = varBool(False)
-    note = varString("")
 
-    def __init__(self, source, sink, name):
-        self.source = source
-        self.sink = sink
-        self.name = name
+class Any(Element):
+    # Dummy element; necessary for add_control_to_list
+    def __init__(self, name):
         super().__init__(name)
-        SCS.ListOfFlows.append(self)
 
-    def __set__(self, instance, value):
-        print("Should not have gotten here.")
-
-    def check(self):
-        ''' makes sure it is good to go '''
-        # all minimum annotations are in place
-        # then add itself to ListOfFlows
-        pass
-
-    def dfd(self):
-        # TODO: add order 
-        add_dataflow_to_dfd(self.name, self.source.name, self.sink.name)
 
 class System(Element):
     OS = varString("")
@@ -436,6 +427,7 @@ class Lambda(System):
     def dfd(self):
         add_element_to_dfd(self, shape="Mcircle")
 
+
 class ExternalEntity(System):
 
     def __init__(self, name):
@@ -443,6 +435,7 @@ class ExternalEntity(System):
 
     def dfd(self):
         add_element_to_dfd(self, shape="underline")
+
 
 class Datastore(System):
     onRDS = varBool(False)
@@ -460,6 +453,7 @@ class Datastore(System):
     def dfd(self):
         add_element_to_dfd(self, shape="none")
 
+
 class Process(System):
     codeType = varString("Unmanaged")
     implementsCommunicationProtocol = varBool(False)
@@ -472,6 +466,7 @@ class Process(System):
     def dfd(self):
         add_element_to_dfd(self, shape="circle")
 
+
 class SetOfProcesses(Process):
     def __init__(self, name):
         super().__init__(name)
@@ -479,18 +474,64 @@ class SetOfProcesses(Process):
     def dfd(self):
         add_element_to_dfd(self, shape="doublecircle")
 
-class Any(Element):
+
+class Dataflow(Element):
+    source = varElement(None)
+    sink = varElement(None)
+    data = varString("")
+    protocol = varString("")
+    dstPort = varInt(0)
+    authenticatedWith = varBool(False)
+    order = varInt(-1)
+    implementsCommunicationProtocol = varBool(False)
+    isEncrypted = varBool(False)
+    note = varString("")
+
+    def __init__(self, source, sink, name):
+        self.source = source
+        self.sink = sink
+        self.name = name
+        super().__init__(name)
+        SCS.ListOfFlows.append(self)
+
+    def __set__(self, instance, value):
+        print("Should not have gotten here.")
+
+    def check(self):
+        ''' makes sure it is good to go '''
+        # all minimum annotations are in place
+        # then add itself to ListOfFlows
+        pass
+
+    def dfd(self):
+        # TODO: add order 
+        add_dataflow_to_dfd(self.name, self.source.name, self.sink.name)
+
+
+class Boundary(Element):
     def __init__(self, name):
         super().__init__(name)
+        if name not in SCS.ListOfBoundaries:
+            SCS.ListOfBoundaries.append(self)
+
+    def dfd(self):
+        _debug(_args, "Found boundary " + self.name)
+        add_boundary_to_dfd(self)
+
+
+class Finding():
+    ''' This class represents a Finding - the element in question and a description of the finding '''
+    def __init__(self, element, description):
+        self.target = element
+        self.description = description
+
 
 # Program start
 # Initialize global variables
-# Initialize control dictionary
 Controls = {}
 
-# Initialize DFD variables
-dfd_in_progress = pydot.Dot(name='DFD', graph_type='digraph')
-boundary_dfd = {}
+# initialize dfd
+initialize_dfd()
 
 # First parse arguments
 parser = argparse.ArgumentParser()
