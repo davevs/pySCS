@@ -1,6 +1,6 @@
 UNAME_S := $(shell uname -s)
     ifeq ($(UNAME_S),Linux)
-        SED = /usr/bin/sed
+        SED = /bin/sed
     endif
     ifeq ($(UNAME_S),Darwin)
         SED = /usr/local/bin/gsed
@@ -34,5 +34,32 @@ build: pytm/pytm.py
 	rm -rf dist/*
 	python3 setup.py sdist bdist_wheel
 	twine upload $(DEPLOYURL) dist/*
+
+safety:
+	safety check --file requirements-dev.txt
+
+sast:
+	bandit -r . --exclude=venv
+
+lint:
+	flake8 . --exclude=venv
+
+autopep:
+	autopep8 -r . --exclude venv --in-place
+
+venv:
+	virtualenv venv -p /usr/local/bin/python3.7
+	pip install -r requirements-dev.txt
+
+dist:
+	python setup.py sdist bdist_wheel
+
+upload-pypi-test:
+	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+venv-test:
+	virtualenv test -p /usr/local/bin/python3.7
+	pip install --index-url https://test.pypi.org/simple/ --no-deps py_scs
+
 
 .PHONY: scs
