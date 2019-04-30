@@ -2,3 +2,8 @@ pySCS/dev/
 pySCS/models/sample/dfd.png
 pySCS/models/sample/seq.png
 pySCS/models/sample/report.html
+__pycache__
+.vscode
+venv
+.coverage
+.tox
