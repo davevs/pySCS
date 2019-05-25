@@ -73,57 +73,7 @@ ID;Description;Source;Target;Condition;Comments
 ```
 
 ## Sample
-The sample file provided in this repo contains a simple sample of a description
-
-```python
-
-scs = SCS("my test model")
-scs.description = "sample to show pySCS"
-
-User_Web = Boundary("User/Web")
-Web_DB = Boundary("Web/DB")
-
-user = Actor("User")
-user.inBoundary = User_Web
-
-web = Server("Web Server")
-web.OS = "CloudOS"
-web.isHardened = True
-
-db = Datastore("SQL Database (*)")
-db.OS = "CentOS"
-db.isHardened = False
-db.inBoundary = Web_DB
-db.isSql = True
-db.inScope = False
-
-my_lambda = Lambda("cleanDBevery6hours")
-my_lambda.hasAccessControl = True
-my_lambda.inBoundary = Web_DB
-
-my_lambda_to_db = Dataflow(my_lambda, db, "(&lambda;)Periodically cleans DB")
-my_lambda_to_db.protocol = "SQL"
-my_lambda_to_db.dstPort = 3306
-
-user_to_web = Dataflow(user, web, "User enters comments (*)")
-user_to_web.protocol = "HTTP"
-user_to_web.dstPort = 80
-user_to_web.data = 'Comments in HTML or Markdown'
-
-web_to_user = Dataflow(web, user, "Comments saved (*)")
-web_to_user.protocol = "HTTP"
-web_to_user.data = 'Ack of saving or error message, in JSON'
-
-web_to_db = Dataflow(web, db, "Insert query with comments")
-web_to_db.protocol = "MySQL"
-web_to_db.dstPort = 3306
-web_to_db.data = 'MySQL insert statement, all literals'
-
-db_to_web = Dataflow(db, web, "Comments contents")
-db_to_web.protocol = "MySQL"
-db_to_web.data = 'Results of insert op'
-
-```
+The sample file provided in this repo contains a simple sample of a description; you can find it under 'models\sample\model.py'
 
 ## Output
 The tool creates a report containing a Dataflow Diagram (generated with pyplot)
@@ -131,39 +81,4 @@ The tool creates a report containing a Dataflow Diagram (generated with pyplot)
 An example Dataflow Diagram: 
 ![dfd.png](.gitbook/assets/dfd.png)
 
-The diagrams and findings can be included in the template to create a final report:
-
-```bash
-
-pySCS.py folder_of_model  --report templates/template_sample.md | pandoc -f markdown -t html > report.html
-
-```
-The templating format used in the provided report template is very simple:
-
-```text
-
-# Security Control Selection Sample
-***
-
-## System Description
-
-{scs.description}
-
-## Dataflow Diagram
-
-![Level 0 DFD](dfd.png)
-
-## Dataflows
-
-Name|From|To |Data|Protocol|Port
-----|----|---|----|--------|----
-{dataflows:repeat:{{item.name}}|{{item.source.name}}|{{item.sink.name}}|{{item.data}}|{{item.protocol}}|{{item.dstPort}}
-}
-
-## Findings
-
-{findings:repeat:* {{item.description}} on element "{{item.target}}"
-}
-
-```
-
+The diagrams and findings can be included in the template to create a final report. The report is created with a markup template. A sample report is provided under 'templates'.

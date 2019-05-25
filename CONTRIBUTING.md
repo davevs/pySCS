@@ -7,8 +7,6 @@ Please read those before starting an issue or a pull request.
 
 Specific pySCS design and development issues, bugs, and feature requests are maintained by GitHub Issues.
 
-*Please do not post installation, build, usage, or modeling questions, or other requests for help to Issues.*
-This helps developers maintain a clear, uncluttered, and efficient view of the state of pySCS.
 Feel free to reach out via Twitter for any problems using the tool: @Dave_von_S
 
 When reporting an issue, it's most helpful to provide the following information, where applicable:
