@@ -11,7 +11,7 @@ NEXT:=$(shell echo $(PREV)+0.1 | /usr/bin/bc | $(SED) -E -e "s/^\./0\./")
 DEPLOYURL=--repository-url https://test.pypi.org/legacy/
 #DEPLOYURL=
 
-all: clean build scs report
+all: clean build scs run
 
 clean:
 	rm -rf dist/* build/*
@@ -19,13 +19,10 @@ clean:
 scs:
 	mkdir -p scs
 
-seq:
-	./pySCS.py --seq | java -Djava.awt.headless=true -jar ./plantuml.jar -tpng -pipe > seq.png
+report: scs
+	./pySCS.py models/sample
 
-report: scs seq
-	./pySCS.py --report templates/template_sample.md > scs/report.md
-
-build: pytm/pytm.py
+build: pySCS/pySCS.py
 	cat setup.py | sed -e "s/'$(PREV)'/'$(NEXT)'/" > newver.py
 	mv newver.py setup.py
 	rm -rf dist/*
