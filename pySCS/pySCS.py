@@ -540,8 +540,8 @@ initialize_dfd()
 parser = argparse.ArgumentParser()
 parser.add_argument('folder', help='required; folder containing the model.py to process')
 parser.add_argument('--file', help='alternative filename (default = model.py')
-parser.add_argument('--template', help='output report using the specified template file')
-parser.add_argument('--reportformat', help='choose html or pdf (html is default)')
+parser.add_argument('--template', help='output report using the specified markup template file')
+parser.add_argument('--format', help='choose html or pdf (html is default)')
 parser.add_argument('--list', action='store_true', help='list controls used in model')
 parser.add_argument('--listfull', action='store_true', help='same as --list but with full descriptions')
 parser.add_argument('--describe', help='describe the contents of a given class (use dummy foldername)')
@@ -577,10 +577,10 @@ if _args.template is not None:
 else:
     SCS._template = "templates\\template_sample.md"
 
-if _args.reportformat is None:
+if _args.format is None:
     report_format = 'html'
 else:
-    if _args.reportformat == 'pdf':
+    if _args.format == 'pdf':
         report_format = 'pdf'
     else:
         stderr.write("Unrecognized report format, defaulting to html")

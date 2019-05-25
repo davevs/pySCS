@@ -11,12 +11,13 @@ Based on your definition, pySCS can generate a Data Flow Diagram (DFD), a Sequen
 Python modules
 * pandas
 * pyplot
+* pypandoc
 * pillow
 
 ## Usage
 
 ```text
-pySCS.py folder [-h] [--file FILENAME] [--debug] [--report REPORT] [--exclude EXCLUDE] [--list] [--describe DESCRIBE] 
+pySCS.py folder [-h] [--file FILENAME] [--debug] [--template TEMPLATE] [format FORMAT] [--list] [--listfull] [--describe DESCRIBE] 
 
 required arguments:
   folder               location of model to process
@@ -25,8 +26,8 @@ optional arguments:
   -h, --help           show this help message and exit
   --file               filename of model to use (defaut is model.py)
   --debug              print debug messages
-  --report REPORT      output report using the named template file (sample template file is under docs/template_test.md)
-  --exclude EXCLUDE    specify threat IDs to be ignored
+  --template TEMPLATE  output report using the specified markup template file
+  --format FORMAT      choose html or pdf (html is default)
   --list               list used controls in model
   --listfull           same as --list but with full details
   --describe DESCRIBE  describe the contents of a given class
@@ -106,23 +107,20 @@ user_to_web = Dataflow(user, web, "User enters comments (*)")
 user_to_web.protocol = "HTTP"
 user_to_web.dstPort = 80
 user_to_web.data = 'Comments in HTML or Markdown'
-user_to_web.order = 1
 
 web_to_user = Dataflow(web, user, "Comments saved (*)")
 web_to_user.protocol = "HTTP"
 web_to_user.data = 'Ack of saving or error message, in JSON'
-web_to_user.order = 2
 
 web_to_db = Dataflow(web, db, "Insert query with comments")
 web_to_db.protocol = "MySQL"
 web_to_db.dstPort = 3306
 web_to_db.data = 'MySQL insert statement, all literals'
-web_to_db.order = 3
 
 db_to_web = Dataflow(db, web, "Comments contents")
 db_to_web.protocol = "MySQL"
 db_to_web.data = 'Results of insert op'
-db_to_web.order = 4
+
 ```
 
 ## Output
