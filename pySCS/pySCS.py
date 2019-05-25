@@ -575,7 +575,7 @@ else:
 if _args.template is not None:
 	SCS._template = _args.template
 else:
-    SCS._template = "templates\\template_sample.md"
+    SCS._template = os.path.join("templates", "template_sample.md")
 
 if _args.format is None:
     report_format = 'html'
