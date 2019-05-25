@@ -1,2 +1,2 @@
-ID;Description;Source;Target;Condition;Mitigation
-GD01;GDPR - Dataflow not encrypted;Element;Dataflow;target.isEncrypted is False;dataflows should be encrypted
+ID;Description;Target;Condition;Mitigation
+GD01;GDPR - Dataflow not encrypted;Dataflow;target.isEncrypted is False;dataflows should be encrypted

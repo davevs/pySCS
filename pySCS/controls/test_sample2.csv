@@ -1,6 +1,6 @@
-ID;Description;Source;Target;Condition;Mitigation
-TE06;Target and condition;;Server;target.isHardened is False;
-TE07;Source and condition;Process;;target.codeType == 'unmanaged';
-TE08;Source, target, condition;Datastore;Element;target.dataType == 'XML';
-TE09;Multiple sources and targets;Process, Datastore, Element, Actor;Process, Datastore, Server;target.dataType == 'JSON';
-TE10;Multiple conditions;Server;Process;'target.providesConfidentiality is False and target.providesIntegrity is False and target.authenticatesSource is True or target.authenticatesDestination is True;
+ID;Description;Target;Condition;Mitigation
+TE06;Target and condition;Server;target.isHardened is False;
+TE07;Source and condition;;target.codeType == 'unmanaged';
+TE08;Source, target, condition;Element;target.dataType == 'XML';
+TE09;Multiple sources and targets;Process, Datastore, Server;target.dataType == 'JSON';
+TE10;Multiple conditions;Process;'target.providesConfidentiality is False and target.providesIntegrity is False and target.authenticatesSource is True or target.authenticatesDestination is True;

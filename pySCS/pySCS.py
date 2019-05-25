@@ -7,10 +7,11 @@ from re import match
 from weakref import WeakKeyDictionary
 from hashlib import sha224
 from re import sub
+import importlib
 import string
 import pandas
 import pydot
-from seqdiag import parser as seq_parser, builder as seq_builder, drawer as seq_drawer 
+import pypandoc
 
 # Descriptors
 # The base for this (descriptors instead of properties) has been shamelessly lifted from    
@@ -153,12 +154,11 @@ def import_control_list(csv_file):
     df = pandas.read_csv(control_csv, sep = ';', index_col = 0)
     # convert all headers to lowercase (just to be sure)
     df.columns = df.columns.str.lower()
-    # fill NaN for source and target with default value 'Any'
-    df[['source','target']] = df[['source','target']].fillna('Any')
+    # fill NaN for target with default value 'Any'
+    df[['target']] = df[['target']].fillna('Any')
     # remove NaN from empty comments
     df['mitigation'] = df['mitigation'].fillna('not provided')
-    # convert source and target to classses
-    df['source'] = df['source'].apply(lambda x: str_to_class(x))
+    # convert target to classses
     df['target'] = df['target'].apply(lambda x: str_to_class(x))
     # Create temporary dictionary with ID as key
     temp_dict = df.to_dict('id')
@@ -232,41 +232,6 @@ def add_dataflow_to_dfd(description, source, sink):
     dataflow_to_add = pydot.Edge(source_id, sink_id, label=description)
     dfd_in_progress.add_edge(dataflow_to_add)
 
-def create_seq_diag():
-    seq_in_in_progress = []
-    seq_in_in_progress.append("seqdiag {\nactivation = none\nautonumber = true\n")
-    for e in SCS.ListOfElements:
-        if type(e) is Actor:
-            seq_in_in_progress.append("{i} [label = \"{n}\"];\n".format(i=_uniq_name(e.name), n=e.name))
-        elif type(e) is Datastore:
-            seq_in_in_progress.append("{i} [label = \"{n}\"];\n".format(i=_uniq_name(e.name), n=e.name))
-        elif type(e) is not Dataflow and type(e) is not Boundary:
-            seq_in_in_progress.append("{i} [label = \"{n}\"];\n".format(i=_uniq_name(e.name), n=e.name))
-
-    ordered = sorted(SCS.ListOfFlows, key=lambda flow: flow.order)
-    for e in ordered:
-        if e.note != "":
-            seq_in_in_progress.append("{s} -> {t} [label = \"{l}\" note = \"{n}\"]\n".format(s=_uniq_name(e.source.name), t=_uniq_name(e.sink.name), l=e.name, n=e.note))
-        else:
-            seq_in_in_progress.append("{s} -> {t} [label = \"{l}\"]\n".format(s=_uniq_name(e.source.name), t=_uniq_name(e.sink.name), l=e.name))
-    seq_in_in_progress.append("}\n")
-    seq_created = ''.join(seq_in_in_progress)
-
-    #write sequence diagram
-    seq_name = "seq.png"
-    seq_file = os.path.join(model_location, seq_name)
-    tree = seq_parser.parse_string(seq_created) 
-    diagram = seq_builder.ScreenNodeBuilder.build(tree) 
-    draw = seq_drawer.DiagramDraw('PNG', diagram, filename=seq_file) 
-    draw.draw() 
-    draw.save() 
-
-    _debug(_args, "SEQ generated:\n")
-    _debug(_args, "{}".format(seq_created))
-
-    import webbrowser
-    webbrowser.open(seq_file)
-
 def output_dfd():
     # write DFD
     dfd_name = "dfd.png"
@@ -276,8 +241,8 @@ def output_dfd():
     _debug(_args, "DFD generated:\n")
     _debug(_args, "{}".format(dfd_in_progress))
 
-    import webbrowser
-    webbrowser.open(dfd_file)
+    # import webbrowser
+    # webbrowser.open(dfd_file)
 
 # Element definitions
 
@@ -302,8 +267,6 @@ class SCS():
         # don't create a dfd, seq diagram, and report if we just want to have the list of controls
         if _args.list is False and _args.listfull is False:
             self.dfd()
-            self.seq()
-        if _args.report is not None:
             self.resolve()
             self.report()
 
@@ -319,14 +282,19 @@ class SCS():
             e.dfd()
         output_dfd()
 
-    def seq(self):
-        create_seq_diag()
-
     def report(self, *_args, **kwargs):
         with open(self._template) as file:
             template = file.read()
 
-        print(self._sf.format(template, scs=self, dataflows=self.ListOfFlows, controls=self.ListOfControls, findings=self.ListOfFindings, elements=self.ListOfElements, boundaries=self.ListOfBoundaries))
+        generated_report = self._sf.format(template, scs=self, dataflows=self.ListOfFlows, controls=self.ListOfControls, findings=self.ListOfFindings, elements=self.ListOfElements, boundaries=self.ListOfBoundaries)
+        report_location = model_location
+        if report_format == 'pdf':
+            report_name = "report.pdf"
+        else:
+            report_name = "report.html"
+        report_file = os.path.join(report_location, report_name)
+        write_report = pypandoc.convert_text(generated_report, report_format, 'md', outputfile=report_file)
+        # print(generated_report)
 
     def resolve(self):
         for e in (SCS.ListOfElements):
@@ -342,19 +310,21 @@ class Control():
     description = varString("")
     condition = varString("")
     target = ()
+    mitigation = varString("")
 
     ''' Represents a possible control '''
-    def __init__(self, id, description, condition, target):
+    def __init__(self, id, description, condition, target, mitigation):
         self.id = id
         self.description = description
         self.condition = condition
         self.target = target
+        self.mitigation = mitigation
 
     @classmethod
     def load(self):
         for t in Controls.keys():
             if t not in SCS._controlsExcluded:
-                tt = Control(t, Controls[t]["description"], Controls[t]["condition"], Controls[t]["target"])
+                tt = Control(t, Controls[t]["description"], Controls[t]["condition"], Controls[t]["target"], Controls[t]["mitigation"])
                 SCS.ListOfControls.append(tt)
         _debug(_args, "{} control(s) loaded\n".format(len(SCS.ListOfControls)))
 #        print(SCS.ListOfControls)
@@ -570,10 +540,10 @@ initialize_dfd()
 parser = argparse.ArgumentParser()
 parser.add_argument('folder', help='required; folder containing the model.py to process')
 parser.add_argument('--file', help='alternative filename (default = model.py')
-parser.add_argument('--report', help='output report using the specified template file')
+parser.add_argument('--template', help='output report using the specified template file')
+parser.add_argument('--reportformat', help='choose html or pdf (html is default)')
 parser.add_argument('--list', action='store_true', help='list controls used in model')
 parser.add_argument('--listfull', action='store_true', help='same as --list but with full descriptions')
-#parser.add_argument('--exclude', help='specify control IDs to be ignored')
 parser.add_argument('--describe', help='describe the contents of a given class (use dummy foldername)')
 parser.add_argument('--debug', action='store_true', help='print debug messages')
 
@@ -602,8 +572,19 @@ else:
 	model_name = "model.py"
 
 # load reporting template if provided
-if _args.report is not None:
-	SCS._template = _args.report
+if _args.template is not None:
+	SCS._template = _args.template
+else:
+    SCS._template = "templates\\template_sample.md"
+
+if _args.reportformat is None:
+    report_format = 'html'
+else:
+    if _args.reportformat == 'pdf':
+        report_format = 'pdf'
+    else:
+        stderr.write("Unrecognized report format, defaulting to html")
+        report_format = 'html'
 
 # parse model
 model_file = os.path.join(model_location, model_name)
@@ -617,11 +598,6 @@ if _args.list is True:
     exit(0)
 if _args.listfull is True:
     for key, value in Controls.items() :
-        print("{i} - {d} \n  from\t{s} \n  to\t{t} \n  when\t{c}\n  Mitigation: {m}".format(i=key, d=Controls[key]["description"], s=Controls[key]["source"], t=Controls[key]["target"], c=Controls[key]["condition"], m=Controls[key]["mitigation"]))
+        print("{i} - {d} \n  on\t{t} \n  when\t{c}\n  Mitigation: {m}".format(i=key, d=Controls[key]["description"], t=Controls[key]["target"], c=Controls[key]["condition"], m=Controls[key]["mitigation"]))
     exit(0)
 
-# FIXME BEGIN
-
-# if _args.exclude is not None:
-#     TM._controlsExcluded = _args.exclude.split(",")
-# FIXME END

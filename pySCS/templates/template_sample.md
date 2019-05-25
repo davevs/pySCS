@@ -8,11 +8,7 @@
 
 ## Dataflow Diagram
 
-![Level 0 DFD](dfd.png)
-
-## Sequence Diagram
-
-![Level 0 SEQ](seq.png)
+![](dfd.png)
 
 ## Dataflows
 
@@ -22,10 +18,13 @@ Name|From|To |Data|Protocol|Port
 }
 
 ## Control list
-
-{findings:repeat:* {{item.description}} on element "{{item.target}}"
+Element|Issue
+-----|-------
+{findings:repeat:{{item.target}}|{{item.description}}
 }
 
 ## Checked controls
-
-{controls:repeat:* }
+ID|Description|Mitigation
+--|-----------|----------
+{controls:repeat:{{item.id}}|{{item.description}}|{{item.mitigation}}
+}

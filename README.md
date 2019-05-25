@@ -11,7 +11,6 @@ Based on your definition, pySCS can generate a Data Flow Diagram (DFD), a Sequen
 Python modules
 * pandas
 * pyplot
-* seqdiag
 * pillow
 
 ## Usage
@@ -36,9 +35,10 @@ optional arguments:
 
 ## Models
 Models are descriptions of your system written in python. As such they can be treated as any other piece of code.
-Models consist of the following components
-* Elements
-* Boundaries
+Models consist of the following components (with the graph counterpart in brackets):
+* Elements (nodes)
+* Dataflows (edges)
+* Boundaries (subgraphs)
 
 Elements use the following hiarchy for inhereting properties:
 ```text
@@ -126,13 +126,10 @@ db_to_web.order = 4
 ```
 
 ## Output
-The tool creates a report containing a Dataflow Diagram (generated with pyplot) and a Sequence Diagram (created with ....) 
+The tool creates a report containing a Dataflow Diagram (generated with pyplot)
 
 An example Dataflow Diagram: 
 ![dfd.png](.gitbook/assets/dfd.png)
-
-An example Sequence Diagram: 
-![seq.png](.gitbook/assets/seq.png)
 
 The diagrams and findings can be included in the template to create a final report:
 
@@ -155,9 +152,6 @@ The templating format used in the provided report template is very simple:
 ## Dataflow Diagram
 
 ![Level 0 DFD](dfd.png)
-
-## Sequence Diagram
-![Level 0 SEQ](seq.png)
 
 ## Dataflows
 

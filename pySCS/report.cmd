@@ -1,1 +1,0 @@
-python pySCS.py %1 --report templates\template_sample.md --file %2 | pandoc -f markdown -t html > %1\report.html
