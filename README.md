@@ -1,3 +1,5 @@
+# WARNING: this is alpha software; only use for testing/demo purposes
+
 # pySCS is a pythonic framework to automate security control selection
 Define your system in Python using the elements and properties described in the pySCS framework. 
 Based on your definition, pySCS can generate a Data Flow Diagram (DFD), a Sequence Diagram, and a list of applicable controls to your system.
