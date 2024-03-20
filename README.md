@@ -1,4 +1,8 @@
-# WARNING: this is alpha software; only use for testing/demo purposes
+# WARNING: this project is no longer maintained
+
+# Background: pySCS is a heavily customized fork of [pytm](https://github.com/izar/pytm) that tried to fix 2 things:
+* load threats from an excel file
+* run everything from python
 
 # pySCS is a pythonic framework to automate security control selection
 Define your system in Python using the elements and properties described in the pySCS framework. 
